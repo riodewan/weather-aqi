@@ -1,15 +1,17 @@
 import { formatDateISOToID } from "@/lib/format";
 import { summarizeAQ } from "@/lib/aqi";
+import ChartTemp from "@/components/ChartTemp";
 
 type CityPageProps = {
-  params: { slug: string };
-  searchParams: { lat?: string; lon?: string; name?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lat?: string; lon?: string; name?: string }>;
 };
 
 export const revalidate = 600;
 
 async function getWeather(lat: string, lon: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/weather?lat=${lat}&lon=${lon}`, {
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  const res = await fetch(`${base}/api/weather?lat=${lat}&lon=${lon}`, {
     next: { revalidate: 600 },
   });
   if (!res.ok) throw new Error("weather_failed");
@@ -17,23 +19,24 @@ async function getWeather(lat: string, lon: string) {
 }
 
 async function getAir(lat: string, lon: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/air?lat=${lat}&lon=${lon}`, {
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  const res = await fetch(`${base}/api/air?lat=${lat}&lon=${lon}`, {
     next: { revalidate: 300 },
   });
   if (!res.ok) return null;
   return res.json();
 }
 
-export default async function CityPage({ params, searchParams }: CityPageProps) {
-  const { slug } = params;
-  const name = searchParams.name ? decodeURIComponent(searchParams.name) : slug.replaceAll("-", " ");
-  const lat = searchParams.lat;
-  const lon = searchParams.lon;
+export default async function CityPage(props: CityPageProps) {
+  const { slug } = await props.params;
+  const { lat, lon, name } = await props.searchParams;
+
+  const displayName = name ? decodeURIComponent(name) : slug.replaceAll("-", " ");
 
   if (!lat || !lon) {
     return (
       <main className="p-6 max-w-5xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold">{name}</h1>
+        <h1 className="text-2xl font-semibold">{displayName}</h1>
         <p className="text-sm text-foreground/70">Parameter lokasi tidak lengkap.</p>
       </main>
     );
@@ -57,7 +60,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   return (
     <main className="p-6 max-w-5xl mx-auto space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{name}</h1>
+        <h1 className="text-2xl font-semibold">{displayName}</h1>
         <p className="text-sm text-foreground/70">
           Koordinat: {lat}, {lon} • Zona: {weather?.timezone ?? "WIB"}
         </p>
@@ -67,22 +70,32 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-foreground/10 p-4">
           <h2 className="font-medium mb-2">Suhu Sekarang</h2>
-          <div className="text-3xl font-semibold">{Math.round(weather.current?.temp)}°C</div>
+          <div className="text-3xl font-semibold">
+            {weather?.current?.temp != null ? Math.round(weather.current.temp) : "—"}°C
+          </div>
           <div className="text-sm text-foreground/70">
-            Terasa {Math.round(weather.current?.feels_like)}° • {weather.current?.label}
+            Terasa {weather?.current?.feels_like != null ? Math.round(weather.current.feels_like) : "—"}° • {weather?.current?.label ?? "—"}
           </div>
         </div>
 
         <div className="rounded-xl border border-foreground/10 p-4">
           <h2 className="font-medium mb-2">Angin</h2>
-          <div className="text-3xl font-semibold">{Math.round(weather.current?.wind_speed)} km/j</div>
-          <div className="text-sm text-foreground/70">Arah {weather.current?.wind_dir}°</div>
+          <div className="text-3xl font-semibold">
+            {weather?.current?.wind_speed != null ? Math.round(weather.current.wind_speed) : "—"} km/j
+          </div>
+          <div className="text-sm text-foreground/70">
+            Arah {weather?.current?.wind_dir != null ? weather.current.wind_dir : "—"}°
+          </div>
         </div>
 
         <div className="rounded-xl border border-foreground/10 p-4">
           <h2 className="font-medium mb-2">Kelembapan & Hujan</h2>
-          <div className="text-3xl font-semibold">{Math.round(weather.current?.humidity)}%</div>
-          <div className="text-sm text-foreground/70">Presipitasi {weather.current?.precip ?? 0} mm</div>
+          <div className="text-3xl font-semibold">
+            {weather?.current?.humidity != null ? Math.round(weather.current.humidity) : "—"}%
+          </div>
+          <div className="text-sm text-foreground/70">
+            Presipitasi {weather?.current?.precip ?? 0} mm
+          </div>
         </div>
       </section>
 
@@ -96,8 +109,8 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           <div className="space-y-3">
             <div className={`inline-flex items-center gap-2 ${aqBg} text-white px-3 py-1.5 rounded-lg`}>
               <span className="text-sm font-medium">{aq?.category ?? "Tidak diketahui"}</span>
-              {aq?.dominant !== "unknown" && (
-                <span className="text-xs opacity-90">• dominan {aq?.dominant.toUpperCase()}</span>
+              {aq?.dominant && aq.dominant !== "unknown" && (
+                <span className="text-xs opacity-90">• dominan {aq.dominant.toUpperCase()}</span>
               )}
             </div>
 
@@ -117,7 +130,8 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
             </div>
 
             <div className="text-xs text-foreground/60">
-              {air.station ? `Stasiun: ${air.station}` : "Stasiun: —"} •{" "}
+              {air.station ? `Stasiun: ${air.station}` : "Model berbasis grid"}
+              {" • "}
               {air.time ? `Waktu: ${new Date(air.time).toLocaleString("id-ID")}` : "Waktu: —"}
             </div>
           </div>
@@ -128,23 +142,37 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       <section className="rounded-xl border border-foreground/10 p-4">
         <h2 className="font-medium mb-4">Prakiraan 7 Hari</h2>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {weather.daily?.map((d: any) => (
+          {weather?.daily?.map((d: any) => (
             <li key={d.date} className="rounded-lg border border-foreground/10 p-3 bg-background">
               <div className="text-sm text-foreground/70">{formatDateISOToID(d.date)}</div>
               <div className="text-base font-medium">{d.label}</div>
               <div className="text-sm">
-                <span className="font-semibold">{Math.round(d.tmax)}°</span> / {Math.round(d.tmin)}°
+                <span className="font-semibold">
+                  {d?.tmax != null ? Math.round(d.tmax) : "—"}°
+                </span>{" "}
+                / {d?.tmin != null ? Math.round(d.tmin) : "—"}°
               </div>
               <div className="text-xs text-foreground/60">
-                Hujan: {Math.round(d.rain_prob ?? 0)}% • {Math.round(d.rain_mm ?? 0)} mm
+                Hujan: {d?.rain_prob != null ? Math.round(d.rain_prob) : 0}% • {d?.rain_mm != null ? Math.round(d.rain_mm) : 0} mm
               </div>
             </li>
           ))}
         </ul>
       </section>
 
+      {/* Grafik suhu 24 jam */}
+      <section className="rounded-xl border border-foreground/10 p-4">
+        <h2 className="font-medium mb-2">Grafik Suhu 24 Jam</h2>
+        <ChartTemp
+          hourly={weather?.hourly?.map((h: any) => ({ time: h.time, temp: h.temp })) ?? []}
+        />
+        <p className="text-xs text-foreground/60 mt-2">
+          Sumber data: Open-Meteo. Waktu lokal WIB.
+        </p>
+      </section>
+
       <footer className="text-xs text-foreground/60">
-        Pembaruan cuaca: {weather.current?.time}
+        Pembaruan cuaca: {weather?.current?.time ?? "—"}
       </footer>
     </main>
   );
