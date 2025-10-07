@@ -1,6 +1,7 @@
 import { formatDateISOToID } from "@/lib/format";
 import { summarizeAQ } from "@/lib/aqi";
 import ChartTemp from "@/components/ChartTemp";
+import MapView from "@/components/MapView";
 
 type CityPageProps = {
   params: Promise<{ slug: string }>;
@@ -170,6 +171,21 @@ export default async function CityPage(props: CityPageProps) {
           Sumber data: Open-Meteo. Waktu lokal WIB.
         </p>
       </section>
+
+      <section className="rounded-xl border border-foreground/10 p-4">
+        <h2 className="font-medium mb-2">Peta</h2>
+        <MapView
+            lat={Number(lat)}
+            lon={Number(lon)}
+            radiusMeters={10000}
+            label={displayName}
+            height={360}
+        />
+        <p className="text-xs text-foreground/60 mt-2">
+            Sumber peta: OpenStreetMap. Pin menandai koordinat kota yang dipilih.
+        </p>
+      </section>
+
 
       <footer className="text-xs text-foreground/60">
         Pembaruan cuaca: {weather?.current?.time ?? "—"}
