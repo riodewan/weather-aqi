@@ -1,7 +1,9 @@
+// src/app/city/[slug]/page.tsx
 import { formatDateISOToID } from "@/lib/format";
 import { summarizeAQ } from "@/lib/aqi";
 import ChartTemp from "@/components/ChartTemp";
-import MapView from "@/components/MapView";
+import FavoriteButton from "@/components/FavoriteButton";
+import CityMap from "@/components/CityMap"; // ✅ pakai wrapper client
 
 type CityPageProps = {
   params: Promise<{ slug: string }>;
@@ -61,10 +63,21 @@ export default async function CityPage(props: CityPageProps) {
   return (
     <main className="p-6 max-w-5xl mx-auto space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{displayName}</h1>
-        <p className="text-sm text-foreground/70">
-          Koordinat: {lat}, {lon} • Zona: {weather?.timezone ?? "WIB"}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">{displayName}</h1>
+            <p className="text-sm text-foreground/70">
+              Koordinat: {lat}, {lon} • Zona: {weather?.timezone ?? "WIB"}
+            </p>
+          </div>
+
+          <FavoriteButton
+            slug={slug}
+            name={displayName}
+            lat={Number(lat)}
+            lon={Number(lon)}
+          />
+        </div>
       </header>
 
       {/* Ringkasan sekarang */}
@@ -131,8 +144,7 @@ export default async function CityPage(props: CityPageProps) {
             </div>
 
             <div className="text-xs text-foreground/60">
-              {air.station ? `Stasiun: ${air.station}` : "Model berbasis grid"}
-              {" • "}
+              {air.station ? `Stasiun: ${air.station}` : "Model berbasis grid"} •{" "}
               {air.time ? `Waktu: ${new Date(air.time).toLocaleString("id-ID")}` : "Waktu: —"}
             </div>
           </div>
@@ -172,20 +184,20 @@ export default async function CityPage(props: CityPageProps) {
         </p>
       </section>
 
+      {/* Peta */}
       <section className="rounded-xl border border-foreground/10 p-4">
         <h2 className="font-medium mb-2">Peta</h2>
-        <MapView
-            lat={Number(lat)}
-            lon={Number(lon)}
-            radiusMeters={10000}
-            label={displayName}
-            height={360}
+        <CityMap
+          lat={Number(lat)}
+          lon={Number(lon)}
+          radiusMeters={10000}
+          label={displayName}
+          height={360}
         />
         <p className="text-xs text-foreground/60 mt-2">
-            Sumber peta: OpenStreetMap. Pin menandai koordinat kota yang dipilih.
+          Sumber peta: OpenStreetMap. Pin menandai koordinat kota yang dipilih.
         </p>
       </section>
-
 
       <footer className="text-xs text-foreground/60">
         Pembaruan cuaca: {weather?.current?.time ?? "—"}

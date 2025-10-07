@@ -1,4 +1,5 @@
 import SearchBox from "@/components/SearchBox";
+import FavoritesGrid from "@/components/FavoritesGrid";
 
 export default function Home() {
   return (
@@ -14,9 +15,7 @@ export default function Home() {
 
       <section className="rounded-xl border border-foreground/10 p-4">
         <h2 className="font-medium mb-2">Kota Favorit</h2>
-        <p className="text-sm text-foreground/60">
-          (Nanti diisi dari LocalStorage. Untuk sekarang kosong dulu.)
-        </p>
+          <FavoritesGrid />
       </section>
     </main>
   );
