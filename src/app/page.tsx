@@ -1,24 +1,23 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import SearchBox from "@/components/SearchBox";
 
 export default function Home() {
   return (
-    <main className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold">Weather & Air Quality (MVP)</h1>
-        <Badge>dev</Badge>
-      </div>
+    <main className="p-6 max-w-3xl mx-auto space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-semibold">Weather & Air Quality</h1>
+        <p className="text-sm text-foreground/70">
+          Cari kota untuk melihat cuaca & kualitas udara (MVP)
+        </p>
+      </header>
 
-      <Card className="max-w-xl">
-        <CardHeader>
-          <CardTitle>Sanity Check UI</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p>Tailwind + shadcn/ui sudah terpasang.</p>
-          <Button>Primary Button</Button>
-        </CardContent>
-      </Card>
+      <SearchBox />
+
+      <section className="rounded-xl border border-foreground/10 p-4">
+        <h2 className="font-medium mb-2">Kota Favorit</h2>
+        <p className="text-sm text-foreground/60">
+          (Nanti diisi dari LocalStorage. Untuk sekarang kosong dulu.)
+        </p>
+      </section>
     </main>
   );
 }
