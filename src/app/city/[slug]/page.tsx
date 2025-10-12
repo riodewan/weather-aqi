@@ -1,9 +1,10 @@
-// src/app/city/[slug]/page.tsx
 import { formatDateISOToID } from "@/lib/format";
 import { summarizeAQ } from "@/lib/aqi";
 import ChartTemp from "@/components/ChartTemp";
 import FavoriteButton from "@/components/FavoriteButton";
-import CityMap from "@/components/CityMap"; // ✅ pakai wrapper client
+import CityMap from "@/components/CityMap";
+import ThemeToggle from "@/components/ThemeToggle";
+import WeatherIcon from "@/components/WeatherIcon";
 
 type CityPageProps = {
   params: Promise<{ slug: string }>;
@@ -11,6 +12,24 @@ type CityPageProps = {
 };
 
 export const revalidate = 600;
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lat?: string; lon?: string; name?: string }>;
+}) {
+  const { slug } = await props.params;
+  const { name, lat, lon } = await props.searchParams;
+  const displayName = name ? decodeURIComponent(name) : slug.replaceAll("-", " ");
+  const title = `Cuaca & Kualitas Udara ${displayName} | WeatherAQI`;
+  const description = `Lihat suhu sekarang, prakiraan 7 hari, dan PM2.5/PM10 untuk ${displayName}. Koordinat ${lat ?? "?"}, ${lon ?? "?"}.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", locale: "id_ID" },
+    twitter: { card: "summary", title, description },
+  };
+}
 
 async function getWeather(lat: string, lon: string) {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
@@ -71,12 +90,15 @@ export default async function CityPage(props: CityPageProps) {
             </p>
           </div>
 
-          <FavoriteButton
-            slug={slug}
-            name={displayName}
-            lat={Number(lat)}
-            lon={Number(lon)}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <FavoriteButton
+              slug={slug}
+              name={displayName}
+              lat={Number(lat)}
+              lon={Number(lon)}
+            />
+          </div>
         </div>
       </header>
 
@@ -87,15 +109,20 @@ export default async function CityPage(props: CityPageProps) {
           <div className="text-3xl font-semibold">
             {weather?.current?.temp != null ? Math.round(weather.current.temp) : "—"}°C
           </div>
-          <div className="text-sm text-foreground/70">
-            Terasa {weather?.current?.feels_like != null ? Math.round(weather.current.feels_like) : "—"}° • {weather?.current?.label ?? "—"}
+          <div className="text-sm text-foreground/70 flex items-center gap-2">
+            <span className="inline-flex">
+                <WeatherIcon code={weather?.current?.code} />
+            </span>
+            <span>
+              Terasa {weather?.current?.feels_like != null ? Math.round(weather.current.feels_like) : "—"}° • {weather?.current?.label ?? "—"}
+            </span>
           </div>
         </div>
 
         <div className="rounded-xl border border-foreground/10 p-4">
           <h2 className="font-medium mb-2">Angin</h2>
           <div className="text-3xl font-semibold">
-            {weather?.current?.wind_speed != null ? Math.round(weather.current.wind_speed) : "—"} km/j
+            {weather?.current?.wind_speed != null ? Math.round(weather.current.wind_speed) : "—"} km/jam
           </div>
           <div className="text-sm text-foreground/70">
             Arah {weather?.current?.wind_dir != null ? weather.current.wind_dir : "—"}°
@@ -158,7 +185,12 @@ export default async function CityPage(props: CityPageProps) {
           {weather?.daily?.map((d: any) => (
             <li key={d.date} className="rounded-lg border border-foreground/10 p-3 bg-background">
               <div className="text-sm text-foreground/70">{formatDateISOToID(d.date)}</div>
-              <div className="text-base font-medium">{d.label}</div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex">
+                    <WeatherIcon code={d.code} />
+                </span>
+                <span className="text-base font-medium">{d.label}</span>
+              </div>
               <div className="text-sm">
                 <span className="font-semibold">
                   {d?.tmax != null ? Math.round(d.tmax) : "—"}°
