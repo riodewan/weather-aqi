@@ -1,3 +1,6 @@
+// src/app/city/[slug]/page.tsx
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { formatDateISOToID } from "@/lib/format";
 import { summarizeAQ } from "@/lib/aqi";
 import ChartTemp from "@/components/ChartTemp";
@@ -81,14 +84,16 @@ export default async function CityPage(props: CityPageProps) {
 
   return (
     <main className="p-6 max-w-5xl mx-auto space-y-6">
-      <header className="space-y-1">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold">{displayName}</h1>
-            <p className="text-sm text-foreground/70">
-              Koordinat: {lat}, {lon} • Zona: {weather?.timezone ?? "WIB"}
-            </p>
-          </div>
+      <header className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg border border-foreground/20 px-3 py-2 text-sm hover:bg-foreground/5"
+            aria-label="Kembali ke beranda"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Kembali</span>
+          </Link>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -99,6 +104,14 @@ export default async function CityPage(props: CityPageProps) {
               lon={Number(lon)}
             />
           </div>
+        </div>
+
+        {/* Judul & subjudul */}
+        <div>
+          <h1 className="text-2xl font-semibold">{displayName}</h1>
+          <p className="text-sm text-foreground/70">
+            Koordinat: {lat}, {lon} • Zona: {weather?.timezone ?? "WIB"}
+          </p>
         </div>
       </header>
 
@@ -111,7 +124,7 @@ export default async function CityPage(props: CityPageProps) {
           </div>
           <div className="text-sm text-foreground/70 flex items-center gap-2">
             <span className="inline-flex">
-                <WeatherIcon code={weather?.current?.code} />
+              <WeatherIcon code={weather?.current?.code} />
             </span>
             <span>
               Terasa {weather?.current?.feels_like != null ? Math.round(weather.current.feels_like) : "—"}° • {weather?.current?.label ?? "—"}
@@ -187,7 +200,7 @@ export default async function CityPage(props: CityPageProps) {
               <div className="text-sm text-foreground/70">{formatDateISOToID(d.date)}</div>
               <div className="flex items-center gap-2">
                 <span className="inline-flex">
-                    <WeatherIcon code={d.code} />
+                  <WeatherIcon code={d.code} />
                 </span>
                 <span className="text-base font-medium">{d.label}</span>
               </div>
